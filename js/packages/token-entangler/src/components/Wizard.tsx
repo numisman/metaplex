@@ -9,11 +9,14 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 
 import { useConnection } from '../contexts';
+import { PublicKey } from '@solana/web3.js';
 
 import { useWallet } from '@solana/wallet-adapter-react';
 
 import * as anchor from '@project-serum/anchor';
 import { getOwnedNFTMints, searchEntanglements } from '../utils/entangler';
+import { getMetadata } from '../utils/accounts';
+import { decodeMetadata, Metadata } from '../utils/schema';
 import { useHistory } from 'react-router-dom';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
@@ -58,12 +61,35 @@ export const Wizard = () => {
     setMyNFTs(walletNFTMints);
     const allEntanglementsMap: any[] = [];
     for (let i = 0; i < walletNFTMints.length; i++) {
+       //debugger;
+       let thisNFTId = new PublicKey(walletNFTMints[i]);
+       let thisNFTData = await getMetadata(thisNFTId);
+       let metadataObj = await connection.getAccountInfo(thisNFTData);
+       let thisNFTURI = '';
+       if (metadataObj) {
+           let metadataDecoded = decodeMetadata(Buffer.from(metadataObj.data));
+           if (metadataDecoded) {
+              thisNFTURI = metadataDecoded.data.uri;
+           }
+           console.log(metadataDecoded);
+           console.log(thisNFTURI);
+           try {
+             let response = await fetch(thisNFTURI);
+             let data = await response.text();
+             console.log(data);
+
+           } catch ( err ) {
+             console.log(`Couldn't retrieve the image from ${thisNFTURI}`);
+           }
+       }
+       debugger;
       const { entanglements, metadata } = await searchEntanglements(
         anchorWallet,
         connection,
         walletNFTMints[i],
         authority,
       );
+
       const juiceDatas = await searchEntanglements(
         anchorWallet,
         connection,
@@ -100,10 +126,10 @@ export const Wizard = () => {
   return (
     <React.Fragment>
       <Typography variant="h4" color="text.primary" gutterBottom>
-        Search Outfits{' '}
+        Which Dumpster?{' '}
       </Typography>
 
-      <p>Searches outfits of your Pandas </p>
+      <p>Which of your glorious dumpsters do you want to exchange? </p>
 
       <Box
         component="form"
@@ -120,7 +146,7 @@ export const Wizard = () => {
             onClick={async e => await handleSubmit(e)}
             endIcon={<SearchIcon />}
           >
-            Search Outfits
+            Exchange Dumpster
           </Button>
           {!!!authority && (
             <Alert severity="error" style={{ marginTop: '1rem' }}>
@@ -133,7 +159,7 @@ export const Wizard = () => {
       </Box>
       <Box sx={{ maxWidth: 'md', display: 'block', marginTop: '2rem' }}>
         <Typography variant="h5" color="text.primary" gutterBottom>
-          My outfits:{' '}
+          My Dumpsters:{' '}
         </Typography>
         {loading && <LinearProgress />}
 
@@ -150,7 +176,7 @@ export const Wizard = () => {
                   >
                     <strong>{e.mint}</strong>
                   </Typography>
-                  {e.entanglements.length > 0 && (
+                  {/*e.entanglements.length > 0 && */ (
                     <React.Fragment>
                       <Typography sx={{ mb: 1.5 }} color="text.secondary">
                         Mints
@@ -183,6 +209,7 @@ export const Wizard = () => {
                             }}
                           >
                             <img
+                              alt="Degen Dumpster"
                               style={{ width: '100px', height: '100px' }}
                               src={
                                 e.metadata.find(d => d.mint.equals(m.mintA))
@@ -191,6 +218,7 @@ export const Wizard = () => {
                             />
                             <p>becomes</p>
                             <img
+                              alt="Degen Dumpsterized Panda"
                               style={{ width: '100px', height: '100px' }}
                               src={
                                 e.metadata.find(d => d.mint.equals(m.mintB))

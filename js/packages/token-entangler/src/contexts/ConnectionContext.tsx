@@ -102,6 +102,11 @@ export type ENV = 'mainnet-beta' | 'testnet' | 'devnet' | 'localnet';
 
 export const ENDPOINTS = [
   {
+    name: 'devnet' as ENV,
+    endpoint: 'https://api.devnet.solana.com/',
+    ChainId: ChainId.Devnet,
+  },
+  {
     name: 'mainnet-beta' as ENV,
     endpoint: 'https://trashpandas.rpcpool.com/',
     ChainId: ChainId.MainnetBeta,
