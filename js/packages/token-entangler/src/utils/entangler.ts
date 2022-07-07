@@ -23,6 +23,7 @@ import {
 import { BN } from '@project-serum/anchor';
 import { getEdition, getMetadata, getTokenAmount } from './accounts';
 import mints from './valid_mints.json';
+import hoodies from './hoodie_urls.json';
 import { extendBorsh } from './borsh';
 export const TOKEN_ENTANGLER = 'token_entangler';
 export const ESCROW = 'escrow';
@@ -834,4 +835,8 @@ export const getOwnedNFTMints = async (
     );
 
   return NFTMints;
+};
+
+export const getHoodies = async () => {
+  return hoodies;
 };

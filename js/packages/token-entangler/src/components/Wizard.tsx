@@ -17,6 +17,7 @@ import * as anchor from '@project-serum/anchor';
 import { getOwnedNFTMints, searchEntanglements } from '../utils/entangler';
 import { getMetadata } from '../utils/accounts';
 import { decodeMetadata, Metadata } from '../utils/schema';
+import { getHoodies } from '../utils/entangler';
 import { useHistory } from 'react-router-dom';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 
@@ -24,6 +25,7 @@ export const Wizard = () => {
   const connection = useConnection();
   const wallet = useWallet();
   const history = useHistory();
+
 
   const [entanglements, setEntanglements] = React.useState<Array<object>>([]);
   const [myNFTs, setMyNFTs] = React.useState<Array<object>>([]);
@@ -50,6 +52,7 @@ export const Wizard = () => {
   }, [wallet]);
 
   const handleSubmit = async (event: React.MouseEvent<HTMLElement>) => {
+    const hoodieArray: any[] = await getHoodies();
     event.preventDefault();
     if (!anchorWallet) {
       return;
@@ -60,8 +63,8 @@ export const Wizard = () => {
     const walletNFTMints = res.map(token => token.info.mint);
     setMyNFTs(walletNFTMints);
     const allEntanglementsMap: any[] = [];
+    debugger;
     for (let i = 0; i < walletNFTMints.length; i++) {
-       //debugger;
        let thisNFTId = new PublicKey(walletNFTMints[i]);
        let thisNFTData = await getMetadata(thisNFTId);
        let metadataObj = await connection.getAccountInfo(thisNFTData);
@@ -71,18 +74,41 @@ export const Wizard = () => {
            if (metadataDecoded) {
               thisNFTURI = metadataDecoded.data.uri;
            }
-           console.log(metadataDecoded);
-           console.log(thisNFTURI);
-           try {
-             let response = await fetch(thisNFTURI);
-             let data = await response.text();
-             console.log(data);
 
-           } catch ( err ) {
-             console.log(`Couldn't retrieve the image from ${thisNFTURI}`);
+           try {
+            debugger;
+            let response = await fetch(thisNFTURI);
+            let nftData = await response.text();
+            let entanglementsData = {mintA: thisNFTId,
+                                     mintB: thisNFTId,
+                                     price: 0.00,};
+            let entanglementsDataArray: any[] = [];
+            entanglementsDataArray.push(entanglementsData);
+
+            let metadataArray: any[] = [];
+            let metadataObj = JSON.parse(nftData);
+            debugger;
+            let dumpsterType = metadataObj.attributes[0].value;
+
+
+            //@ts-ignore
+
+            metadataObj.hoodieURI = hoodieArray.find((thisHoodie) => { return dumpsterType === thisHoodie.attribute}).location;
+            metadataObj.mint = thisNFTId.toString();
+            metadataArray.push(metadataObj);
+
+            allEntanglementsMap.push({
+               mint: walletNFTMints[i],
+               entanglements: [...entanglementsDataArray],
+               metadata: [...metadataArray]
+             })
+
+           } catch ( err: any ) {
+             console.log(`Couldn't retrieve the image from ${thisNFTURI}: ${err.message}`);
            }
        }
        debugger;
+/*       
       const { entanglements, metadata } = await searchEntanglements(
         anchorWallet,
         connection,
@@ -96,6 +122,7 @@ export const Wizard = () => {
         walletNFTMints[i],
         juiceAuthority,
       );
+
       allEntanglementsMap.push({
         mint: walletNFTMints[i],
         entanglements,
@@ -106,9 +133,11 @@ export const Wizard = () => {
         entanglements: juiceDatas.entanglements,
         metadata: juiceDatas.metadata,
       });
+*/
     }
     console.log('Entangle', allEntanglementsMap);
     setEntanglements([...(await allEntanglementsMap)]);
+    debugger;
     setLoading(false);
   };
 
@@ -176,7 +205,7 @@ export const Wizard = () => {
                   >
                     <strong>{e.mint}</strong>
                   </Typography>
-                  {/*e.entanglements.length > 0 && */ (
+                  {e.entanglements.length > 0 && (
                     <React.Fragment>
                       <Typography sx={{ mb: 1.5 }} color="text.secondary">
                         Mints
@@ -188,6 +217,7 @@ export const Wizard = () => {
                           key={m.mintA.toString()}
                           sx={{ marginBottom: '2rem' }}
                         >
+                        {/*
                           <strong>MintA</strong> : {`${m.mintA.toString()}`}{' '}
                           <br />
                           <strong>MintB</strong> : {`${m.mintB.toString()}`}{' '}
@@ -196,11 +226,11 @@ export const Wizard = () => {
                           <br />
                           <strong>Pays Every Time</strong> :{' '}
                           {`${m.paysEveryTime}`} <br />
-                          <div
+                      */} <div
                             style={{
                               display: 'flex',
                               flexDirection: myNFTs.find(
-                                (d: any) => d == m.mintA.toBase58(),
+                                (d: any) => d === m.mintA.toBase58(),
                               )
                                 ? 'row'
                                 : 'row-reverse',
@@ -212,8 +242,8 @@ export const Wizard = () => {
                               alt="Degen Dumpster"
                               style={{ width: '100px', height: '100px' }}
                               src={
-                                e.metadata.find(d => d.mint.equals(m.mintA))
-                                  .imageUrl
+                                e.metadata.find(d => d.mint === m.mintA.toString())
+                                  .image
                               }
                             />
                             <p>becomes</p>
@@ -221,8 +251,8 @@ export const Wizard = () => {
                               alt="Degen Dumpsterized Panda"
                               style={{ width: '100px', height: '100px' }}
                               src={
-                                e.metadata.find(d => d.mint.equals(m.mintB))
-                                  .imageUrl
+                                e.metadata.find(d => d.mint === m.mintB.toString())
+                                  .hoodieURI
                               }
                             />
                           </div>
@@ -242,7 +272,7 @@ export const Wizard = () => {
                               startIcon={<SwapHorizIcon />}
                               sx={{ marginTop: '1rem' }}
                             >
-                              CHANGE OUTFIT
+                              HOODIE UP!
                             </Button>
                           </div>
                         </Typography>
