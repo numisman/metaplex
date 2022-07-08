@@ -144,10 +144,13 @@ export const Wizard = () => {
   const handleEntanglementClick = async (
     event: React.MouseEvent<HTMLElement>,
     entanglement: any,
+    hoodieURI: any
   ) => {
     event.preventDefault();
+    debugger;
     await localStorage.setItem('mintA', entanglement.mintA.toString());
     await localStorage.setItem('mintB', entanglement.mintB.toString());
+    await localStorage.setItem('hoodieURI', hoodieURI);
     await localStorage.setItem('entanglement', '');
     history.push(`swap/`);
   };
@@ -266,7 +269,7 @@ export const Wizard = () => {
                           >
                             <Button
                               onClick={event =>
-                                handleEntanglementClick(event, m)
+                                handleEntanglementClick(event, m, e.metadata[0].hoodieURI)
                               }
                               variant="contained"
                               startIcon={<SwapHorizIcon />}
