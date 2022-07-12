@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useConnection } from '../contexts';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -8,16 +9,21 @@ import { Box, Button, FormGroup, TextField } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import SendIcon from '@mui/icons-material/Send';
 import AliceCarousel from 'react-alice-carousel';
+import { useHistory } from 'react-router-dom';
+// @eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getOwnedNFTMints } from '../utils/entangler';
 import 'react-alice-carousel/lib/alice-carousel.css';
 
 
 export const Swap = () => {
+  const history = useHistory();
   const connection = useConnection();
   const wallet = useWallet();
-
   const [mintA, setMintA] = React.useState(localStorage.getItem('mintA') || '');
   const [mintB, setMintB] = React.useState(localStorage.getItem('mintB') || '');
   const [hoodieURI, setHoodieURI] = React.useState(localStorage.getItem('hoodieURI') || '');
+  const [pandaList, setPandaList] = React.useState(localStorage.getItem('pandaList') || '');
+  const [selectedPanda, setSelectedPanda] = React.useState('');
   const [streetAddress1, setStreetAddress1] = React.useState('');
   const [streetAddress2, setStreetAddress2] = React.useState('');
   const [city, setCity] = React.useState('');
@@ -26,6 +32,8 @@ export const Swap = () => {
   const [entangledPair, setEntangledPair] = React.useState(
     localStorage.getItem('entangledPair') || '',
   );
+
+  console.log(`In Swap.Swap(), pandaList is:`, JSON.parse(pandaList));
 
   const anchorWallet = useMemo(() => {
     if (
@@ -57,7 +65,15 @@ export const Swap = () => {
     if (!anchorWallet) {
       return;
     }
-    const txnResult = await swapEntanglement(
+    debugger;
+    history.push(`Finalize/`);
+  };
+
+
+
+
+
+  /*  const txnResult = await swapEntanglement(
       anchorWallet,
       connection,
       mintA,
@@ -66,6 +82,7 @@ export const Swap = () => {
     );
     setEntangledPair(txnResult.epkey);
   };
+  */
 
   const isEnable = (
     mintA: string,
@@ -80,34 +97,38 @@ export const Swap = () => {
   };
 
   const handleDragStart = (e) => e.preventDefault();
-  const items = [
-    <a href="www.google.com"><img alt="trashPanda1"
-         height="100px"
-         width="100px"
-         src="https://img.rarible.com/prod/image/upload/t_image_big/prod-itemImages/SOLANA-Bs56Sd5brQucuSFDj3cRYES46dd6Cx7WFEUCio5wg5BY/2d18cdf1"
-         onDragStart={handleDragStart}
-         role="presentation" /></a>,
-    <a href="www.yahoo.com"><img alt="trashPanda2"
-         height="100px"
-         width="100px"
-         src="https://www.arweave.net/x4Jl6dhJX01u-oRjhTZzNBLGu0gFMJ33x55bR2TZ72s?ext=png"
-         onDragStart={handleDragStart}
-         role="presentation" /></a>,
-  ];
+  const items: any[] = [];
+  const ownedPandas: any[] = JSON.parse(pandaList);
+  for (let i = 0; i < ownedPandas.length; i++) { 
+    const thisPanda = ownedPandas[i];
+    const thisItem = <img alt={thisPanda.name}
+                            height="100px"
+                            width="100px"
+                            src={thisPanda.image}
+                            onDragStart={handleDragStart}
+                            role="presentation" />;
+    items.push(thisItem);
+  }
+  const handleSelectPanda = (evt) => {
+     debugger;
+     setSelectedPanda(ownedPandas[evt.item]);
+  };
 
   return (
     <React.Fragment>
       <Typography variant="h4" color="text.primary" gutterBottom>
         Exchange Dumpster
       </Typography>
+      <Box>
       <p>You chose this hoodie</p>
       <img
           alt="Sweatshirt"
           style={{ width: '100px', height: '100px' }}
           src={hoodieURI}
-        />
+      />
       <p>Now who is going to wear it?</p>
-      <AliceCarousel mouseTracking items={items} />
+      <AliceCarousel mouseTracking items={items} onSlideChanged={(evt) => handleSelectPanda(evt)} />
+      </Box>
       <Box
         component="form"
         sx={{

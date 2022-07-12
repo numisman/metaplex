@@ -14,9 +14,9 @@ import { PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 import * as anchor from '@project-serum/anchor';
-import { getOwnedNFTMints, searchEntanglements } from '../utils/entangler';
+import { getOwnedNFTMints } from '../utils/entangler';
 import { getMetadata } from '../utils/accounts';
-import { decodeMetadata, Metadata } from '../utils/schema';
+import { decodeMetadata } from '../utils/schema';
 import { getHoodies } from '../utils/entangler';
 import { useHistory } from 'react-router-dom';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
@@ -30,6 +30,7 @@ export const Wizard = () => {
   const [entanglements, setEntanglements] = React.useState<Array<object>>([]);
   const [myNFTs, setMyNFTs] = React.useState<Array<object>>([]);
   const [loading, setLoading] = useState(false);
+  const [pandaList, setPandaList] = useState<Array<object>>([]);
 
   const authority = process.env.REACT_APP_WHITELISTED_AUTHORITY!;
   const juiceAuthority = "Co1dxFc7MDWUKeEiDuW47EWeoiMT1L7BUWnNG6HP9JUi";
@@ -59,11 +60,38 @@ export const Wizard = () => {
     }
     setLoading(true);
     setEntanglements([]);
-    const res = await getOwnedNFTMints(anchorWallet, connection);
+    const res = await getOwnedNFTMints(anchorWallet, connection, 'dumpsters');
+    // Get the pandas to be used in the next step.  The wallet and connection
+    // are available here.
+    const pandas = await getOwnedNFTMints(anchorWallet, connection, 'pandas');
+    const pandaCage: any[] = [];
+    for (let i = 0; i < pandas.length; i++) {
+      let thisNFTId = new PublicKey(pandas[i].info.mint);
+      let thisNFTData = await getMetadata(thisNFTId);
+      let metadataObj = await connection.getAccountInfo(thisNFTData);
+      let thisNFTURI = '';
+      if (metadataObj) {
+        let metadataDecoded = decodeMetadata(Buffer.from(metadataObj.data));
+        if (metadataDecoded) {
+          thisNFTURI = metadataDecoded.data.uri;
+        }
+        
+        try {
+          let response = await fetch(thisNFTURI);
+          let nftData = await response.text();
+          let nftObj = JSON.parse(nftData);
+          nftObj.nftId = thisNFTId;
+          console.log(`The NFT info for ${thisNFTId} is: `, JSON.parse(nftData));
+          pandaCage.push(nftObj);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+    setPandaList(pandaCage);
     const walletNFTMints = res.map(token => token.info.mint);
     setMyNFTs(walletNFTMints);
     const allEntanglementsMap: any[] = [];
-    debugger;
     for (let i = 0; i < walletNFTMints.length; i++) {
        let thisNFTId = new PublicKey(walletNFTMints[i]);
        let thisNFTData = await getMetadata(thisNFTId);
@@ -76,7 +104,6 @@ export const Wizard = () => {
            }
 
            try {
-            debugger;
             let response = await fetch(thisNFTURI);
             let nftData = await response.text();
             let entanglementsData = {mintA: thisNFTId,
@@ -87,7 +114,6 @@ export const Wizard = () => {
 
             let metadataArray: any[] = [];
             let metadataObj = JSON.parse(nftData);
-            debugger;
             let dumpsterType = metadataObj.attributes[0].value;
 
 
@@ -107,7 +133,6 @@ export const Wizard = () => {
              console.log(`Couldn't retrieve the image from ${thisNFTURI}: ${err.message}`);
            }
        }
-       debugger;
 /*       
       const { entanglements, metadata } = await searchEntanglements(
         anchorWallet,
@@ -137,7 +162,6 @@ export const Wizard = () => {
     }
     console.log('Entangle', allEntanglementsMap);
     setEntanglements([...(await allEntanglementsMap)]);
-    debugger;
     setLoading(false);
   };
 
@@ -151,6 +175,7 @@ export const Wizard = () => {
     await localStorage.setItem('mintA', entanglement.mintA.toString());
     await localStorage.setItem('mintB', entanglement.mintB.toString());
     await localStorage.setItem('hoodieURI', hoodieURI);
+    await localStorage.setItem('pandaList', JSON.stringify(pandaList));
     await localStorage.setItem('entanglement', '');
     history.push(`swap/`);
   };

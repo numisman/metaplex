@@ -23,12 +23,15 @@ import {
 import { BN } from '@project-serum/anchor';
 import { getEdition, getMetadata, getTokenAmount } from './accounts';
 import mints from './valid_mints.json';
+import pandas from './valid_pandas.json';
 import hoodies from './hoodie_urls.json';
 import { extendBorsh } from './borsh';
 export const TOKEN_ENTANGLER = 'token_entangler';
 export const ESCROW = 'escrow';
 export const A = 'A';
 export const B = 'B';
+
+console.log(`Pandas are: ${pandas}`);
 
 export class Creator {
   address: PublicKey;
@@ -465,10 +468,10 @@ export const swapEntanglement = async (
   const aAta = (await getAtaForMint(mintAKey, anchorWallet.publicKey))[0];
   const bAta = (await getAtaForMint(mintBKey, anchorWallet.publicKey))[0];
   const currABal = await getTokenAmount(anchorProgram, aAta, mintAKey);
-  const token = currABal == 1 ? aAta : bAta,
-    replacementToken = currABal == 1 ? bAta : aAta;
-  const tokenMint = currABal == 1 ? mintAKey : mintBKey,
-    replacementTokenMint = currABal == 1 ? mintBKey : mintAKey;
+  const token = currABal === 1 ? aAta : bAta,
+    replacementToken = currABal === 1 ? bAta : aAta;
+  const tokenMint = currABal === 1 ? mintAKey : mintBKey,
+    replacementTokenMint = currABal === 1 ? mintBKey : mintAKey;
   const result = await getTokenEntanglementEscrows(mintAKey, mintBKey);
 
   const tokenAEscrow = result[0];
@@ -814,6 +817,7 @@ const getMultipleAccountsCore = async (
 export const getOwnedNFTMints = async (
   anchorWallet: anchor.Wallet,
   connection: Connection,
+  mintType: string
 ) => {
   const anchorProgram = await loadTokenEntanglementProgram(
     anchorWallet,
@@ -829,9 +833,9 @@ export const getOwnedNFTMints = async (
     .map(val => val.account.data.parsed)
     .filter(
       val =>
-        val.info.tokenAmount.amount != 0 &&
+        val.info.tokenAmount.amount !== 0 &&
         val.info.tokenAmount.decimals === 0 &&
-        mints.includes(val.info.mint),
+        ((mintType === 'pandas' && pandas.includes(val.info.mint)) || (mintType === 'dumpsters' && mints.includes(val.info.mint))),
     );
 
   return NFTMints;

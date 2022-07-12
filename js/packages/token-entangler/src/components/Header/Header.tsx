@@ -21,7 +21,7 @@ export const Header = ({ narrow }: { narrow: boolean }) => {
       href: `/`,
       innerNarrow: 'Find Outfits',
       inner: (
-        <img style={{ width: '35px', height: '35px' }} src="/LogoTransp.png" />
+        <img alt="Find Hoodie" style={{ width: '35px', height: '35px' }} src="/LogoTransp.png" />
       ),
     },
   ];

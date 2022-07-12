@@ -596,6 +596,7 @@ programCommand('all_mints')
       env,
       rpcUrl,
     );
+  
     const candyMachine = 'EpRFqiEBLKwYxqx2QMSJqSZsVRPN7bptQgkEAd3NgSMm';
     const metadataByCandyMachine = [
       ...(await getAccountsByCreatorAddress(

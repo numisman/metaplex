@@ -9,6 +9,7 @@ import { Box } from '@mui/material';
 import { useColorMode } from './contexts';
 import { Header } from './components/Header/Header';
 import { Swap } from './components/Swap';
+import { Finalize } from './components/Finalize';
 import { Wizard } from './components/Wizard';
 
 const getWindowDimensions = () => {
@@ -76,6 +77,7 @@ function App() {
             <Box height="40px" />
             <Switch>
               <Route path="/swap" component={Swap} />
+              <Route path="/finalize" component={Finalize} />
               <Route path="/" component={Wizard} />
             </Switch>
             <Box height="80px" />
